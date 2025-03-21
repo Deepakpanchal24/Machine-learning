@@ -1,0 +1,74 @@
+# Import necessary libraries
+import numpy as np  # For numerical computations
+#import matplotlib.pyplot as plt  # For plotting (commented out, not used)
+import pandas as pd  # For data manipulation and analysis
+
+# Load the dataset from the specified path
+dataset = pd.read_csv(r"D:\Deepak\Datascience\Code\5 march mlr\5th - mlr\5th - mlr\MLR\Investment.csv")
+
+# Separate the independent variables (X) and the dependent variable (y)
+X = dataset.iloc[:, :-1]  # Select all columns except the last one for independent variables
+y = dataset.iloc[:, 4]  # Select the 5th column as the dependent variable (target)
+
+# Handle categorical variables using one-hot encoding (convert categorical to numerical)
+X = pd.get_dummies(X, dtype=int)  # Convert categorical columns into dummy/indicator variables
+
+# Split the dataset into training and testing sets (80% training, 20% testing)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+# Import Linear Regression model from sklearn and train the model
+from sklearn.linear_model import LinearRegression
+regressor = LinearRegression()
+regressor.fit(X_train, y_train)  # Train the model using the training set
+
+# Predict the target values for the test set
+y_pred = regressor.predict(X_test)
+
+# Get the coefficients (slopes) and intercept (bias) of the regression model
+m = regressor.coef_  # Coefficients of the model (slope for each feature)
+m
+
+c = regressor.intercept_  # Intercept (constant term)
+c
+
+# Performing Backward Elimination using statsmodels to find the optimal model
+import statsmodels.formula.api as sm
+
+# Add a column of ones to X for the intercept term (required for statsmodels OLS)
+X = np.append(arr=np.ones((50, 1)).astype(int), values=X, axis=1)
+
+# Perform backward elimination by removing the least significant variables step by step
+import statsmodels.api as sm
+
+# Step 1: Start with all predictors
+X_opt = X[:, [0, 1, 2, 3, 4, 5]]
+regressor_OLS = sm.OLS(endog=y, exog=X_opt).fit()  # Fit the model with all predictors
+regressor_OLS.summary()  # Check the p-values to identify insignificant variables
+
+# Step 2: Remove the predictor with the highest p-value (greater than 0.05)
+X_opt = X[:, [0, 1, 2, 3, 5]]
+regressor_OLS = sm.OLS(endog=y, exog=X_opt).fit()
+regressor_OLS.summary()
+
+# Step 3: Continue removing variables until only significant ones remain
+X_opt = X[:, [0, 1, 2, 3]]
+regressor_OLS = sm.OLS(endog=y, exog=X_opt).fit()
+regressor_OLS.summary()
+
+# Step 4: Further reduce if necessary
+X_opt = X[:, [0, 1, 3]]
+regressor_OLS = sm.OLS(endog=y, exog=X_opt).fit()
+regressor_OLS.summary()
+
+# Step 5: Final model with only the most significant predictors
+X_opt = X[:, [0, 1]]
+regressor_OLS = sm.OLS(endog=y, exog=X_opt).fit()
+regressor_OLS.summary()
+
+# Evaluate the model's performance on training and testing sets
+bias = regressor.score(X_train, y_train)  # R² score on training data (measures bias)
+bias
+
+variance = regressor.score(X_test, y_test)  # R² score on testing data (measures variance)
+variance
